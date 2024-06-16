@@ -2,15 +2,15 @@
 #include "WifiCam.hpp"
 #include <WiFi.h>
 
-static const char* WIFI_SSID = "vodafone9AB36A";
-static const char* WIFI_PASS = "GsKLbZyxsZY3fmKY";
+static const char *WIFI_SSID = "vodafone9AB36A";
+static const char *WIFI_PASS = "GsKLbZyxsZY3fmKY";
 
 esp32cam::Resolution initialResolution;
 
 WebServer server(80);
 
-void
-setup() {
+void setup()
+{
   Serial.begin(115200);
   Serial.println();
   delay(2000);
@@ -18,7 +18,8 @@ setup() {
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  if (WiFi.waitForConnectResult() != WL_CONNECTED)
+  {
     Serial.printf("WiFi failure %d\n", WiFi.status());
     delay(5000);
     ESP.restart();
@@ -36,7 +37,8 @@ setup() {
     cfg.setJpeg(80);
 
     bool ok = Camera.begin(cfg);
-    if (!ok) {
+    if (!ok)
+    {
       Serial.println("camera initialize failure");
       delay(5000);
       ESP.restart();
@@ -52,7 +54,14 @@ setup() {
   server.begin();
 }
 
-void
-loop() {
+void loop()
+{
+  if (Serial.available()) // if there is data comming
+  {
+    String command = Serial.readStringUntil('\n'); // read string until meet newline character
+    captureImage();
+    Serial.println(command);
+  }
+
   server.handleClient();
 }
