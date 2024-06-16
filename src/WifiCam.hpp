@@ -13,10 +13,15 @@ void addRequestHandlers();
 
 bool handleClickedOption();
 
-bool checkValidArguments(long width, long height, String &format);
+bool hasChangedResolution(esp32cam::Resolution &r, long width, long height);
 
-// static void
-// serveStill(bool wantBmp);
+bool areArgumentsInLocation(esp32cam::Resolution &r, long width, long height, String &format);
+
+void routeFromFormat(String &format);
+
+bool isValidResolution(esp32cam::Resolution &r);
+
+bool areValidArguments(long width, long height, String &format);
 
 void captureImage();
 

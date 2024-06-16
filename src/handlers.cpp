@@ -114,15 +114,36 @@ bool handleClickedOption()
   long height = server.pathArg(1).toInt();
   String format = server.pathArg(2);
 
-  if (!checkValidArguments(width, height, format))
+  if (!areValidArguments(width, height, format))
     return false;
 
   auto r = esp32cam::Camera.listResolutions().find(width, height);
-  if (!r.isValid())
+
+  if (!isValidResolution(r))
+    return false;
+  if (!areArgumentsInLocation(r, width, height, format))
+    return false;
+  if (!hasChangedResolution(r, width, height))
+    return false;
+  Serial.printf("changeResolution(%ld,%ld) success\n", width, height);
+
+  routeFromFormat(format);
+  return true;
+}
+
+bool hasChangedResolution(esp32cam::Resolution &r, long width, long height)
+{
+  if (!esp32cam::Camera.changeResolution(r))
   {
-    server.send(404, "text/plain", "non-existent resolution\n");
+    Serial.printf("changeResolution(%ld,%ld) failure\n", width, height);
+    server.send(500, "text/plain", "changeResolution error\n");
     return false;
   }
+  return true;
+}
+
+bool areArgumentsInLocation(esp32cam::Resolution &r, long width, long height, String &format)
+{
   if (r.getWidth() != width || r.getHeight() != height)
   {
     server.sendHeader("Location",
@@ -130,14 +151,11 @@ bool handleClickedOption()
     server.send(302);
     return false;
   }
+  return true;
+}
 
-  if (!esp32cam::Camera.changeResolution(r))
-  {
-    Serial.printf("changeResolution(%ld,%ld) failure\n", width, height);
-    server.send(500, "text/plain", "changeResolution error\n");
-  }
-  Serial.printf("changeResolution(%ld,%ld) success\n", width, height);
-
+void routeFromFormat(String &format)
+{
   if (format == "bmp")
   {
     serveStill(true);
@@ -150,21 +168,29 @@ bool handleClickedOption()
   {
     serveMjpeg();
   }
+}
+
+bool isValidResolution(esp32cam::Resolution &r)
+{
+  if (!r.isValid())
+  {
+    server.send(404, "text/plain", "non-existent resolution\n");
+    return false;
+  }
   return true;
 }
 
-
-  bool checkValidArguments(long width, long height, String &format)
+bool areValidArguments(long width, long height, String &format)
+{
+  if (width == 0 || height == 0 || !(format == "bmp" || format == "jpg" || format == "mjpeg"))
   {
-    if (width == 0 || height == 0 || !(format == "bmp" || format == "jpg" || format == "mjpeg"))
-    {
-      server.send(404);
-      return false;
-    }
-    return true;
+    server.send(404);
+    return false;
   }
+  return true;
+}
 
-  void captureImage()
-  {
-    serveStill(false);
-  }
+void captureImage()
+{
+  serveStill(false);
+}
